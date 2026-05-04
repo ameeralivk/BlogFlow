@@ -26,8 +26,6 @@ app.use(cors({
   origin: [
     "https://blog-flow-three.vercel.app",
     "https://blog-flow-fw5if6ytj-ameer-ali-vks-projects.vercel.app",
-    "http://localhost:5173"
-
   ],
   credentials: true
 }));
