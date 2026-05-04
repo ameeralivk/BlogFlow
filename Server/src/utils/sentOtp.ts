@@ -23,6 +23,9 @@
 // };
 
 import nodemailer from "nodemailer";
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -32,13 +35,10 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  tls: {
-    rejectUnauthorized: false,
-  },
 });
 
-// 🔥 DEBUG: SMTP connection check
-transporter.verify((error, success) => {
+// SMTP check
+transporter.verify((error) => {
   if (error) {
     console.log("❌ SMTP NOT READY:", error);
   } else {
@@ -52,27 +52,20 @@ export const sendOtpEmail = async (email: string, otp: string) => {
     console.log("📨 Sending OTP to:", email);
     console.log("🔑 OTP Generated:", otp);
 
-    const mailOptions = {
+    const info = await transporter.sendMail({
       from: `"No Reply" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
-    };
-
-    console.log("🚀 [SMTP] Sending email now...");
-
-    const info = await transporter.sendMail(mailOptions);
+    });
 
     console.log("✅ EMAIL SENT SUCCESSFULLY");
     console.log("📨 Message ID:", info.messageId);
-    console.log("📤 Response:", info.response);
 
     return { success: true };
   } catch (error: any) {
     console.log("❌ EMAIL FAILED");
-    console.log("⚠️ Error Name:", error?.name);
-    console.log("⚠️ Error Message:", error?.message);
-    console.log("⚠️ Full Error:", error);
+    console.log("⚠️ Error:", error?.message);
 
     return { success: false };
   }
