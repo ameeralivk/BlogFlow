@@ -57,13 +57,19 @@ transporter.verify((error, success) => {
  */
 export const sendOtpEmail = async (email: string, otp: string) => {
   try {
-    // ❗ DO NOT await — prevents API delay (fixes modal lag)
-    transporter.sendMail({
-      from: `"No Reply" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Your OTP Code",
-      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
-    });
+    transporter.sendMail(
+      {
+        from: `"No Reply" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Your OTP Code",
+        text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+      },
+      (err) => {
+        if (err) {
+          console.log("❌ SMTP send error:", err);
+        }
+      }
+    );
 
     return { success: true };
   } catch (error) {
