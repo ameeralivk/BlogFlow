@@ -1,11 +1,42 @@
+// import nodemailer from "nodemailer";
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASS, // App password here
+//   },
+// });
+// export const sendOtpEmail = async (email: string, otp: string) => {
+//   try {
+//     await transporter.sendMail({
+//       from: `"No Reply" <${process.env.EMAIL_USER}>`,
+//       to: email,
+//       subject: "Your OTP Code",
+//       text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+//     });
+
+//     return { success: true };
+//   } catch (error) {
+//     console.error("Email error:", error);
+//     return { success: false };
+//   }
+// };
+
 import nodemailer from "nodemailer";
+
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // MUST be false for 587
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // App password here
+    pass: process.env.EMAIL_PASS, // Gmail App Password
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
+
 export const sendOtpEmail = async (email: string, otp: string) => {
   try {
     await transporter.sendMail({
@@ -17,8 +48,7 @@ export const sendOtpEmail = async (email: string, otp: string) => {
 
     return { success: true };
   } catch (error) {
-    console.error("Email error:", error);
+    console.error("❌ Email error:", error);
     return { success: false };
   }
 };
-
