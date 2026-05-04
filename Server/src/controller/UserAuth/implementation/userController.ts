@@ -115,14 +115,14 @@ export class UserAuthController implements IUserController {
         res.cookie("accessToken", accessToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
+          sameSite: "none",
           maxAge: Number(process.env.ACCESS_TOKEN_MAX_AGE),
         });
 
         res.cookie("refreshToken", refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
+          sameSite: "none",
           maxAge: Number(process.env.REFRESH_TOKEN_MAX_AGE),
         });
 
@@ -161,7 +161,7 @@ export class UserAuthController implements IUserController {
         res.cookie("accessToken", accessToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
+          sameSite: "none",
           maxAge: Number(process.env.ACCESS_TOKEN_MAX_AGE),
         });
 
