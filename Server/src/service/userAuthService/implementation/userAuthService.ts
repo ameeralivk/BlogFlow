@@ -37,8 +37,8 @@ export class UserAuthService implements IUserAuthService {
     };
     const redisDataKey = `UserData:${email}`;
     const redisOtpKey = `otp:${email}`;
-    await redisClient.setEx(redisDataKey, 600, JSON.stringify(data));
-    await redisClient.setEx(redisOtpKey, 120, hashedOtp);
+    await redisClient?.setEx(redisDataKey, 600, JSON.stringify(data));
+    await redisClient?.setEx(redisOtpKey, 120, hashedOtp);
     const res = await sendOtpEmail(email, otp);
     if (res.success) {
       return {
@@ -56,7 +56,7 @@ export class UserAuthService implements IUserAuthService {
   async verifyOtp(email: string, otp: string) {
     const redisDataKey = `UserData:${email}`;
     const redisOtpKey = `otp:${email}`;
-    const hashedOtp = await redisClient.get(redisOtpKey);
+    const hashedOtp = await redisClient?.get(redisOtpKey);
 
     if (!hashedOtp) {
       throw new AppError(MESSAGES.OTP_EXPIRED, HttpStatus.BAD_REQUEST);
@@ -69,7 +69,7 @@ export class UserAuthService implements IUserAuthService {
     if (hashedInputOtp !== hashedOtp) {
       throw new AppError("Invalid OTP", HttpStatus.BAD_REQUEST);
     }
-    const userDataString = await redisClient.get(redisDataKey);
+    const userDataString = await redisClient?.get(redisDataKey);
     if (!userDataString) {
       throw new AppError(MESSAGES.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
     }
@@ -78,8 +78,8 @@ export class UserAuthService implements IUserAuthService {
 
     await this._userAuthRepo.createUser(userData);
 
-    await redisClient.del(redisOtpKey);
-    await redisClient.del(redisDataKey);
+    await redisClient?.del(redisOtpKey);
+    await redisClient?.del(redisDataKey);
     return {
       success: true,
       message: MESSAGES.OTP_VERIFY_SUCCESS,
@@ -96,8 +96,8 @@ export class UserAuthService implements IUserAuthService {
       email,
       password: hashedPassword,
     };
-    await redisClient.setEx(redisDataKey, 600, JSON.stringify(data));
-    await redisClient.setEx(redisOtpKey, 120, hashedOtp);
+    await redisClient?.setEx(redisDataKey, 600, JSON.stringify(data));
+    await redisClient?.setEx(redisOtpKey, 120, hashedOtp);
     await sendOtpEmail(email, otp);
 
     return { success: true, message: MESSAGES.OTP_RESENT_SUCCESS };
@@ -197,7 +197,7 @@ export class UserAuthService implements IUserAuthService {
 
     const { otp, hashedOtp } = generateOtp();
     const redisOtpKey = `forgot_otp:${email}`;
-    await redisClient.setEx(redisOtpKey, 300, hashedOtp); // 5 mins
+    await redisClient?.setEx(redisOtpKey, 300, hashedOtp); // 5 mins
     const res = await sendOtpEmail(email, otp);
     
     if (res.success) {
@@ -209,7 +209,7 @@ export class UserAuthService implements IUserAuthService {
 
   async verifyForgotPasswordOtp(email: string, otp: string): Promise<{ success: boolean; message: string; resetToken: string }> {
     const redisOtpKey = `forgot_otp:${email}`;
-    const hashedOtp = await redisClient.get(redisOtpKey);
+    const hashedOtp = await redisClient?.get(redisOtpKey);
 
     if (!hashedOtp) {
       throw new AppError(MESSAGES.OTP_EXPIRED, HttpStatus.BAD_REQUEST);
@@ -224,11 +224,11 @@ export class UserAuthService implements IUserAuthService {
       throw new AppError("Invalid OTP", HttpStatus.BAD_REQUEST);
     }
 
-    await redisClient.del(redisOtpKey);
+    await redisClient?.del(redisOtpKey);
 
     const resetToken = crypto.randomBytes(32).toString("hex");
     const redisResetKey = `reset_token:${email}`;
-    await redisClient.setEx(redisResetKey, 600, resetToken); // 10 mins
+    await redisClient?.setEx(redisResetKey, 600, resetToken); // 10 mins
 
     return {
       success: true,
@@ -239,7 +239,7 @@ export class UserAuthService implements IUserAuthService {
 
   async resetPassword(email: string, newPassword: string, resetToken: string): Promise<{ success: boolean; message: string }> {
     const redisResetKey = `reset_token:${email}`;
-    const storedToken = await redisClient.get(redisResetKey);
+    const storedToken = await redisClient?.get(redisResetKey);
 
     if (!storedToken || storedToken !== resetToken) {
       throw new AppError("Invalid or expired reset token", HttpStatus.BAD_REQUEST);
@@ -253,7 +253,7 @@ export class UserAuthService implements IUserAuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this._userAuthRepo.updateUser(user._id.toString(), { password: hashedPassword });
 
-    await redisClient.del(redisResetKey);
+    await redisClient?.del(redisResetKey);
 
     return {
       success: true,
