@@ -1,26 +1,41 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../../../DI/types";
 import { IUserController } from "../interface/IUserController";
-import { IUserAuthService } from "../../../service/userAuthService/interface/IUserAuthService";
+import type { IUserAuthService } from "../../../service/userAuthService/interface/IUserAuthService";
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "../../../constants/httpStatus";
 import { MESSAGES } from "../../../constants/messages";
 import { AppError } from "../../../utils/Error";
+import { UserRegisterRequestDTO, UserLoginRequestDTO, UpdateProfileRequestDTO } from "../../../utils/dto/dto/user.dto";
+import { toUserResponseDTO } from "../../../utils/dto/mapper/user.mapper";
+
+const isProd = process.env.NODE_ENV === "production";
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+};
 
 @injectable()
 export class UserAuthController implements IUserController {
   constructor(
     @inject(TYPES.userAuthService)
     private _userAuthService: IUserAuthService,
-  ) {}
+  ) { }
 
   signup = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { fullName, email, password } = req.body;
+      const reqDto: UserRegisterRequestDTO = { fullName, email, password };
+
+      if (!reqDto.password) {
+        throw new AppError("Password is required", HttpStatus.BAD_REQUEST);
+      }
+
       const otpsent = await this._userAuthService.register(
-        fullName,
-        email,
-        password,
+        reqDto.fullName,
+        reqDto.email,
+        reqDto.password,
       );
 
       if (otpsent.success) {
@@ -108,28 +123,30 @@ export class UserAuthController implements IUserController {
   ): Promise<Response> => {
     try {
       const { email, password } = req.body;
+      const reqDto: UserLoginRequestDTO = { email, password };
+
+      if (!reqDto.password) {
+        throw new AppError("Password is required", HttpStatus.BAD_REQUEST);
+      }
+
       const { success, message, user, accessToken, refreshToken } =
-        await this._userAuthService.login(email, password);
+        await this._userAuthService.login(reqDto.email, reqDto.password);
 
       if (success) {
         res.cookie("accessToken", accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "none",
+          ...cookieOptions,
           maxAge: Number(process.env.ACCESS_TOKEN_MAX_AGE),
         });
 
         res.cookie("refreshToken", refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "none",
+          ...cookieOptions,
           maxAge: Number(process.env.REFRESH_TOKEN_MAX_AGE),
         });
 
         return res.status(HttpStatus.OK).json({
           success: true,
           message,
-          user,
+          user: user ? toUserResponseDTO(user) : undefined,
         });
       }
 
@@ -159,9 +176,7 @@ export class UserAuthController implements IUserController {
 
       if (success) {
         res.cookie("accessToken", accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "none",
+          ...cookieOptions,
           maxAge: Number(process.env.ACCESS_TOKEN_MAX_AGE),
         });
 
@@ -187,8 +202,8 @@ export class UserAuthController implements IUserController {
     next: NextFunction,
   ): Promise<Response> => {
     try {
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
+      res.clearCookie("accessToken", cookieOptions);
+      res.clearCookie("refreshToken", cookieOptions);
       return res.status(HttpStatus.OK).json({
         success: true,
         message: "Logged out successfully",
@@ -207,6 +222,9 @@ export class UserAuthController implements IUserController {
     try {
       const { id } = req.params;
       const response = await this._userAuthService.getUserProfile(id as string);
+      if (response.success && response.user) {
+        response.user = toUserResponseDTO(response.user);
+      }
       return res.status(HttpStatus.OK).json(response);
     } catch (error) {
       next(error);
@@ -224,7 +242,7 @@ export class UserAuthController implements IUserController {
       const { fullName } = req.body;
       const profileImage = req.file ? req.file.path : undefined;
 
-      const updateData: any = {};
+      const updateData: UpdateProfileRequestDTO = {};
       if (fullName) updateData.fullName = fullName;
       if (profileImage) updateData.profileImage = profileImage;
 
@@ -232,6 +250,9 @@ export class UserAuthController implements IUserController {
         id as string,
         updateData,
       );
+      if (response.success && response.user) {
+        response.user = toUserResponseDTO(response.user);
+      }
       return res.status(HttpStatus.OK).json(response);
     } catch (error) {
       next(error);

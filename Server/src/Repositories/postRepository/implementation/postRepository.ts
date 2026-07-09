@@ -14,7 +14,7 @@ export class PostRepository extends BaseRepository<PostDocument> implements IPos
   }
 
   async findAllWithAuthor(): Promise<PostDocument[]> {
-    return await this.model.find().sort({ createdAt: -1 }).populate("author", "fullName email profileImage");
+    return await this.model.find({ status: "published" }).sort({ createdAt: -1 }).populate("author", "fullName email profileImage");
   }
   
   override async findById(id: string): Promise<PostDocument | null> {

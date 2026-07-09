@@ -1,7 +1,7 @@
 import { inject, injectable } from "inversify";
 import { IUserAuthService } from "../interface/IUserAuthService";
 import { TYPES } from "../../../DI/types";
-import { IUserAuthRepository } from "../../../Repositories/userAuthRepository/interface/IUserAuthRepository";
+import type{ IUserAuthRepository } from "../../../Repositories/userAuthRepository/interface/IUserAuthRepository";
 import bcrypt from "bcryptjs";
 import { sendOtpEmail } from "../../../utils/sentOtp";
 import redisClient from "../../../config/redisClient";

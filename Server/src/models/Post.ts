@@ -16,7 +16,7 @@ const postSchema = new Schema<PostDocument>(
     },
     image: {
       type: String,
-      required: true,
+      required: false,
     },
     author: {
       type: Schema.Types.ObjectId,
@@ -34,6 +34,12 @@ const postSchema = new Schema<PostDocument>(
         trim: true,
       },
     ],
+    status: {
+      type: String,
+      enum: ["draft", "published"],
+      default: "draft",
+      required: true,
+    },
   },
   {
     timestamps: true,

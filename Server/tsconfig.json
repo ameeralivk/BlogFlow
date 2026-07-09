@@ -24,7 +24,6 @@
 //   "include": ["src", "types"],
 //   "exclude": ["node_modules", "dist", "eslint.config.mts"]
 // }
-
 {
   "compilerOptions": {
     "experimentalDecorators": true,
@@ -45,8 +44,17 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src", "types"],
-  "exclude": ["node_modules", "dist", "eslint.config.mts"]
+  "include": [
+    "src",
+    "types"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "eslint.config.mts"
+  ]
 }

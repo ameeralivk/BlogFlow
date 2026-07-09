@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../../../DI/types";
-import { IPostRepository } from "../../../Repositories/postRepository/interface/IPostRepository";
+import type{ IPostRepository } from "../../../Repositories/postRepository/interface/IPostRepository";
 import { IPostService } from "../interface/IPostService";
 import { PostDocument } from "../../../models/Post";
 
