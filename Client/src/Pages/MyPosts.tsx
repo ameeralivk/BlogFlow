@@ -56,7 +56,7 @@ export default function MyPosts() {
       const response = await deletePost(showDeleteModal);
       if (response.success) {
         showSuccessToast("Post deleted successfully");
-        setPosts(posts.filter((p) => p._id !== showDeleteModal));
+        setPosts(posts.filter((p) => p.id !== showDeleteModal));
         setShowDeleteModal(null);
       }
     } catch (error: any) {
@@ -184,7 +184,7 @@ export default function MyPosts() {
               <tbody className="divide-y divide-slate-50">
                 {currentPosts.map((post) => (
                   <tr
-                    key={post._id}
+                    key={post.id}
                     className="hover:bg-slate-50/30 transition-colors group"
                   >
                     <td className="px-8 py-5">
@@ -213,12 +213,18 @@ export default function MyPosts() {
                     </td>
                     <td className="px-8 py-5">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          post.status === "draft"
+                            ? "bg-amber-50 text-amber-600"
+                            : "bg-emerald-50 text-emerald-600"
+                        }`}
                       >
                         <div
-                          className={`w-1.5 h-1.5 rounded-full bg-emerald-600`}
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            post.status === "draft" ? "bg-amber-500" : "bg-emerald-600"
+                          }`}
                         />
-                        Published
+                        {post.status === "draft" ? "Draft" : "Published"}
                       </span>
                     </td>
                     <td className="px-8 py-5">
@@ -227,19 +233,19 @@ export default function MyPosts() {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          to={`/dashboard/edit/${post._id}`}
+                          to={`/dashboard/edit/${post.id}`}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         >
                           <Edit3 className="w-4 h-4" />
                         </Link>
                         <Link
-                          to={`/blogs/${post._id}`}
+                          to={`/blogs/${post.id}`}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
                         <button
-                          onClick={() => setShowDeleteModal(post._id)}
+                          onClick={() => setShowDeleteModal(post.id)}
                           className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
                         >
                           <Trash2 className="w-4 h-4" />

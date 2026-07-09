@@ -1,5 +1,8 @@
 import { useState } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import {
+  Save,
   Send,
   Image as ImageIcon,
   X,
@@ -17,6 +20,16 @@ import { showErrorToast } from "../Elements/ErrorToast";
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
 
+const QUILL_MODULES = {
+  toolbar: [
+    [{ header: [1, 2, false] }],
+    ["bold", "italic", "underline"],
+    ["blockquote", "link"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["clean"],
+  ],
+};
+
 export default function CreateBlog() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -26,6 +39,7 @@ export default function CreateBlog() {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -56,6 +70,18 @@ export default function CreateBlog() {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
+  const buildFormData = (status: "draft" | "published") => {
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append("category", category);
+    if (image) formData.append("image", image);
+    formData.append("author", user?.id || "");
+    formData.append("tags", JSON.stringify(tags));
+    formData.append("status", status);
+    return formData;
+  };
+
   const handlePublish = async () => {
     if (!title || !content || !image || !category) {
       showErrorToast("Please fill all required fields and upload an image.");
@@ -64,15 +90,7 @@ export default function CreateBlog() {
 
     try {
       setIsPublishing(true);
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("content", content);
-      formData.append("category", category);
-      formData.append("image", image);
-      formData.append("author", user?.id || "");
-      formData.append("tags", JSON.stringify(tags));
-
-      const response = await createPost(formData);
+      const response = await createPost(buildFormData("published"));
       if (response.success) {
         showSuccessToast("Post published successfully!");
         navigate("/dashboard/my-posts");
@@ -81,6 +99,26 @@ export default function CreateBlog() {
       showErrorToast(error.message || "Failed to publish post");
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!title) {
+      showErrorToast("Please add a title before saving as draft.");
+      return;
+    }
+
+    try {
+      setIsSavingDraft(true);
+      const response = await createPost(buildFormData("draft"));
+      if (response.success) {
+        showSuccessToast("Post saved as draft!");
+        navigate("/dashboard/my-posts");
+      }
+    } catch (error: any) {
+      showErrorToast(error.message || "Failed to save draft");
+    } finally {
+      setIsSavingDraft(false);
     }
   };
 
@@ -100,6 +138,18 @@ export default function CreateBlog() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSaveDraft}
+            disabled={isSavingDraft || isPublishing}
+            className="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all disabled:opacity-70"
+          >
+            {isSavingDraft ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSavingDraft ? "Saving..." : "Save Draft"}
+          </button>
           <button
             onClick={handlePublish}
             disabled={isPublishing}
@@ -135,16 +185,14 @@ export default function CreateBlog() {
           </div>
 
           {/* Content Editor */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-            <label className="px-8 pt-6 text-sm font-medium text-slate-500">
-              Story Content
-            </label>
-
-            <textarea
-              placeholder="Write your story here..."
-              className="flex-1 w-full p-8 text-slate-700 leading-relaxed placeholder:text-slate-200 border-none focus:ring-0 resize-none"
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+            <ReactQuill
+              theme="snow"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={setContent}
+              modules={QUILL_MODULES}
+              placeholder="Write your story here..."
+              className="blogflow-editor"
             />
           </div>
         </div>

@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+.blogflow-editor .ql-toolbar {
+  border: none;
+  border-bottom: 1px solid rgb(248 250 252);
+  background: rgb(248 250 252 / 0.5);
+  padding: 0.75rem 1.5rem;
+}
+
+.blogflow-editor .ql-container {
+  border: none;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.blogflow-editor .ql-editor {
+  min-height: 440px;
+  padding: 2rem;
+  color: rgb(51 65 85);
+  line-height: 1.75;
+}
+
+.blogflow-editor .ql-editor.ql-blank::before {
+  color: rgb(226 232 240);
+  font-style: normal;
+  left: 2rem;
+}

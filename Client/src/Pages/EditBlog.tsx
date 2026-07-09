@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import {
   Save,
+  Send,
   Image as ImageIcon,
   X,
   Plus,
@@ -15,6 +18,16 @@ import { getPostById, updatePost } from "../Services/Post";
 import { showSuccessToast } from "../Elements/SuccessToast";
 import { showErrorToast } from "../Elements/ErrorToast";
 
+const QUILL_MODULES = {
+  toolbar: [
+    [{ header: [1, 2, false] }],
+    ["bold", "italic", "underline"],
+    ["blockquote", "link"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["clean"],
+  ],
+};
+
 export default function EditBlog() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,6 +40,8 @@ export default function EditBlog() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [status, setStatus] = useState<"draft" | "published">("draft");
 
   useEffect(() => {
     if (id) {
@@ -45,6 +60,7 @@ export default function EditBlog() {
         setCategory(post.category || "Technology");
         setTags(post.tags || []);
         setImagePreview(post.image);
+        setStatus(post.status || "draft");
       }
     } catch (error: any) {
       showErrorToast(error.message || "Failed to fetch post details");
@@ -80,6 +96,19 @@ export default function EditBlog() {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
+  const buildFormData = (targetStatus: "draft" | "published") => {
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append("category", category);
+    if (image) {
+      formData.append("image", image);
+    }
+    formData.append("tags", JSON.stringify(tags));
+    formData.append("status", targetStatus);
+    return formData;
+  };
+
   const handleUpdate = async () => {
     if (!title || !content || !category) {
       showErrorToast("Title, content and category are required.");
@@ -88,24 +117,35 @@ export default function EditBlog() {
 
     try {
       setIsUpdating(true);
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("content", content);
-      formData.append("category", category);
-      if (image) {
-        formData.append("image", image);
-      }
-      formData.append("tags", JSON.stringify(tags));
-
-      const response = await updatePost(id as string, formData);
+      const response = await updatePost(id as string, buildFormData(status));
       if (response.success) {
-        showSuccessToast("Post updated successfully!");
+        showSuccessToast(status === "draft" ? "Draft saved!" : "Post updated successfully!");
         navigate("/dashboard/my-posts");
       }
     } catch (error: any) {
       showErrorToast(error.message || "Failed to update post");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!title || !content || !category || !imagePreview) {
+      showErrorToast("Please fill all required fields and upload an image.");
+      return;
+    }
+
+    try {
+      setIsPublishing(true);
+      const response = await updatePost(id as string, buildFormData("published"));
+      if (response.success) {
+        showSuccessToast("Post published successfully!");
+        navigate("/dashboard/my-posts");
+      }
+    } catch (error: any) {
+      showErrorToast(error.message || "Failed to publish post");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -118,6 +158,16 @@ export default function EditBlog() {
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Edit Post</h1>
+          {!loading && (
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                status === "draft" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+              }`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${status === "draft" ? "bg-amber-500" : "bg-emerald-600"}`} />
+              {status === "draft" ? "Draft" : "Published"}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -128,12 +178,22 @@ export default function EditBlog() {
           </button>
           <button
             onClick={handleUpdate}
-            disabled={isUpdating || loading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-70"
+            disabled={isUpdating || isPublishing || loading}
+            className="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all disabled:opacity-70"
           >
             {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isUpdating ? "Updating..." : "Update Post"}
+            {isUpdating ? "Saving..." : status === "draft" ? "Save Draft" : "Update Post"}
           </button>
+          {status === "draft" && (
+            <button
+              onClick={handlePublish}
+              disabled={isUpdating || isPublishing || loading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-70"
+            >
+              {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isPublishing ? "Publishing..." : "Publish"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -161,19 +221,14 @@ export default function EditBlog() {
             </div>
 
             {/* Content Editor */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-              <div className="px-6 py-3 border-b border-slate-50 bg-slate-50/50 flex flex-wrap gap-2">
-                {['B', 'I', 'U', 'H1', 'H2', 'Link', 'Quote', 'List'].map(tool => (
-                  <button key={tool} className="px-3 py-1.5 hover:bg-white rounded-lg text-slate-600 text-sm font-bold border border-transparent hover:border-slate-200 transition-all">
-                    {tool}
-                  </button>
-                ))}
-              </div>
-              <textarea
-                placeholder="Write your story here..."
-                className="flex-1 w-full p-8 text-slate-700 leading-relaxed placeholder:text-slate-200 border-none focus:ring-0 resize-none"
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <ReactQuill
+                theme="snow"
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={setContent}
+                modules={QUILL_MODULES}
+                placeholder="Write your story here..."
+                className="blogflow-editor"
               />
             </div>
           </div>

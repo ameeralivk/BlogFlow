@@ -143,12 +143,12 @@ export default function ExploreBlogs() {
                 <div className="grid grid-cols-1 gap-12 w-full">
                   {filteredBlogs.map((blog) => (
                     <article
-                      key={blog._id}
+                      key={blog.id}
                       className="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row h-auto md:h-72"
                     >
                       {/* Left Side: Image */}
                       <Link
-                        to={`/blogs/${blog._id}`}
+                        to={`/blogs/${blog.id}`}
                         className="relative w-full md:w-[40%] h-48 md:h-full overflow-hidden"
                       >
                         <img
@@ -178,7 +178,7 @@ export default function ExploreBlogs() {
                             </span>
                           </div>
 
-                          <Link to={`/blogs/${blog._id}`}>
+                          <Link to={`/blogs/${blog.id}`}>
                             <h3 className="text-xl md:text-2xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors mb-3 leading-tight line-clamp-2">
                               {blog.title}
                             </h3>
@@ -191,14 +191,14 @@ export default function ExploreBlogs() {
 
                         <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
                           <Link
-                            to={`/blogs/${blog._id}`}
+                            to={`/blogs/${blog.id}`}
                             className="bg-[#065F46] text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#047857] transition-all shadow-lg shadow-emerald-900/10"
                           >
                             Read Full Story <ChevronRight className="w-4 h-4" />
                           </Link>
 
                           <button
-                            onClick={() => handleShare(blog._id, blog.title)}
+                            onClick={() => handleShare(blog.id, blog.title)}
                             className="p-2.5 text-slate-400 hover:text-slate-600 border border-slate-100 rounded-xl hover:bg-slate-50 transition-all flex items-center gap-2 text-sm font-bold px-4"
                           >
                             <Share2 className="w-4 h-4" /> Share
