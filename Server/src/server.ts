@@ -13,25 +13,19 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
-const url = process.env.FRONTED_URL;
-if (url) {
-  app.use(
-    cors({
-      origin: [url],
-      credentials: true,
-    }),
-  );
-}
-// app.use(
-//   cors({
-//     origin: [
-//       "http://localhost:5173",
-//       "https://blog-flow-three.vercel.app",
-//       "https://blog-flow-fw5if6ytj-ameer-ali-vks-projects.vercel.app",
-//     ],
-//     credentials: true,
-//   }),
-// );
+const allowedOrigins = [
+  process.env.FRONTED_URL,
+  "http://localhost:5173",
+  "https://blog-flow-three.vercel.app",
+  "https://blog-flow-fw5if6ytj-ameer-ali-vks-projects.vercel.app",
+].filter((origin): origin is string => Boolean(origin));
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 connectDB();
 connectRedis();
 
