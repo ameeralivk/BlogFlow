@@ -11,8 +11,24 @@ import {
 import { getAllPosts } from "../Services/Post";
 import { showErrorToast } from "../Elements/ErrorToast";
 
-const stripHtml = (html: string) =>
-  (html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+// Keeps only bold/italic tags (stripped of attributes) so previews can show
+// formatting; every other tag/attribute is removed to avoid unsafe HTML.
+const ALLOWED_PREVIEW_TAGS = ["b", "strong", "i", "em"];
+const previewHtml = (html: string) => {
+  if (!html) return "";
+  const withoutScripts = html.replace(
+    /<(script|style)[^>]*>[\s\S]*?<\/\1>/gi,
+    ""
+  );
+  return withoutScripts.replace(
+    /<\/?([a-zA-Z0-9]+)[^>]*>/g,
+    (match, tag: string) => {
+      const lower = tag.toLowerCase();
+      if (!ALLOWED_PREVIEW_TAGS.includes(lower)) return "";
+      return match.startsWith("</") ? `</${lower}>` : `<${lower}>`;
+    }
+  );
+};
 
 const CATEGORIES = [
   "All",
@@ -187,9 +203,12 @@ export default function ExploreBlogs() {
                             </h3>
                           </Link>
 
-                          <p className="text-slate-500 text-sm md:text-base mb-6 line-clamp-2 font-medium leading-relaxed">
-                            {stripHtml(blog.content)}
-                          </p>
+                          <p
+                            className="text-slate-500 text-sm md:text-base mb-6 line-clamp-2 font-medium leading-relaxed"
+                            dangerouslySetInnerHTML={{
+                              __html: previewHtml(blog.content),
+                            }}
+                          />
                         </div>
 
                         <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
