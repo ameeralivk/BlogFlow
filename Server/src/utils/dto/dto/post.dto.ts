@@ -17,12 +17,19 @@ export interface UpdatePostRequestDTO {
   status?: "draft" | "published";
 }
 
+export interface PostAuthorDTO {
+  id: string;
+  fullName: string;
+  email: string;
+  profileImage?: string;
+}
+
 export interface PostResponseDTO {
   id: string;
   title: string;
   content: string;
   image?: string;
-  author: any;
+  author: string | PostAuthorDTO;
   category: string;
   tags: string[];
   status: "draft" | "published";

@@ -14,7 +14,7 @@ export class UserAuthRepository
   }
 
   async findByEmail(email: string): Promise<UserDocuments | null> {
-    return await this.findOne({ email } as any);
+    return await this.findOne({ email });
   }
 
   async findById(id: string): Promise<UserDocuments | null> {

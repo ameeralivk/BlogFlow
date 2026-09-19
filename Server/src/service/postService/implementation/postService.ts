@@ -3,6 +3,7 @@ import { TYPES } from "../../../DI/types";
 import type{ IPostRepository } from "../../../Repositories/postRepository/interface/IPostRepository";
 import { IPostService } from "../interface/IPostService";
 import { PostDocument } from "../../../models/Post";
+import { CreatePostRequestDTO, UpdatePostRequestDTO } from "../../../utils/dto/dto/post.dto";
 
 @injectable()
 export class PostService implements IPostService {
@@ -11,11 +12,11 @@ export class PostService implements IPostService {
     private _postRepo: IPostRepository
   ) {}
 
-  async createPost(data: any): Promise<PostDocument> {
+  async createPost(data: CreatePostRequestDTO): Promise<PostDocument> {
     return await this._postRepo.create(data);
   }
 
-  async updatePost(id: string, data: any): Promise<PostDocument | null> {
+  async updatePost(id: string, data: UpdatePostRequestDTO): Promise<PostDocument | null> {
     return await this._postRepo.update(id, data);
   }
 

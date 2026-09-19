@@ -11,6 +11,9 @@ import {
 import { getAllPosts } from "../Services/Post";
 import { showErrorToast } from "../Elements/ErrorToast";
 
+const stripHtml = (html: string) =>
+  (html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
 const CATEGORIES = [
   "All",
   "Technology",
@@ -185,7 +188,7 @@ export default function ExploreBlogs() {
                           </Link>
 
                           <p className="text-slate-500 text-sm md:text-base mb-6 line-clamp-2 font-medium leading-relaxed">
-                            {blog.content}
+                            {stripHtml(blog.content)}
                           </p>
                         </div>
 

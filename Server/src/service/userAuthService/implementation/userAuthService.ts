@@ -11,6 +11,9 @@ import { AppError } from "../../../utils/Error";
 import HttpStatus from "../../../constants/httpStatus";
 import { MESSAGES } from "../../../constants/messages";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../../utils/jwt";
+import { toUserResponseDTO } from "../../../utils/dto/mapper/user.mapper";
+import { UpdateProfileRequestDTO, UserResponseDTO } from "../../../utils/dto/dto/user.dto";
+import { assertFound } from "../../../utils/assertFound";
 
 @injectable()
 export class UserAuthService implements IUserAuthService {
@@ -47,7 +50,7 @@ export class UserAuthService implements IUserAuthService {
       };
     } else {
       return {
-        success: true,
+        success: false,
         message: MESSAGES.OTP_SENT_FAILED,
       };
     }
@@ -98,7 +101,11 @@ export class UserAuthService implements IUserAuthService {
     };
     await redisClient?.setEx(redisDataKey, 600, JSON.stringify(data));
     await redisClient?.setEx(redisOtpKey, 120, hashedOtp);
-    await sendOtpEmail(email, otp);
+    const res = await sendOtpEmail(email, otp);
+
+    if (!res.success) {
+      return { success: false, message: MESSAGES.OTP_SENT_FAILED };
+    }
 
     return { success: true, message: MESSAGES.OTP_RESENT_SUCCESS };
   };
@@ -109,14 +116,11 @@ export class UserAuthService implements IUserAuthService {
   ): Promise<{
     success: boolean;
     message: string;
-    user?: any;
+    user?: UserResponseDTO;
     accessToken?: string;
     refreshToken?: string;
   }> {
-    const user = await this._userAuthRepo.findByEmail(email);
-    if (!user) {
-      throw new AppError(MESSAGES.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
+    const user = assertFound(await this._userAuthRepo.findByEmail(email), MESSAGES.USER_NOT_FOUND);
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
@@ -130,12 +134,7 @@ export class UserAuthService implements IUserAuthService {
     return {
       success: true,
       message: "Login successful",
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        profileImage: user.profileImage,
-      },
+      user: toUserResponseDTO(user),
       accessToken,
       refreshToken,
     };
@@ -154,46 +153,26 @@ export class UserAuthService implements IUserAuthService {
     };
   }
 
-  async getUserProfile(id: string): Promise<any> {
-    const user = await this._userAuthRepo.findById(id);
-    if (!user) {
-      throw new AppError(MESSAGES.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
+  async getUserProfile(id: string): Promise<{ success: boolean; user: UserResponseDTO }> {
+    const user = assertFound(await this._userAuthRepo.findById(id), MESSAGES.USER_NOT_FOUND);
 
     return {
       success: true,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        profileImage: user.profileImage,
-        createdAt: user.createdAt,
-      },
+      user: toUserResponseDTO(user),
     };
   }
 
-  async updateProfile(id: string, data: any): Promise<any> {
-    const updatedUser = await this._userAuthRepo.updateUser(id, data);
-    if (!updatedUser) {
-      throw new AppError(MESSAGES.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
+  async updateProfile(id: string, data: UpdateProfileRequestDTO): Promise<{ success: boolean; user: UserResponseDTO }> {
+    const updatedUser = assertFound(await this._userAuthRepo.updateUser(id, data), MESSAGES.USER_NOT_FOUND);
 
     return {
       success: true,
-      user: {
-        id: updatedUser._id,
-        fullName: updatedUser.fullName,
-        email: updatedUser.email,
-        profileImage: updatedUser.profileImage,
-      },
+      user: toUserResponseDTO(updatedUser),
     };
   }
 
   async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
-    const user = await this._userAuthRepo.findByEmail(email);
-    if (!user) {
-      throw new AppError(MESSAGES.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
+    assertFound(await this._userAuthRepo.findByEmail(email), MESSAGES.USER_NOT_FOUND);
 
     const { otp, hashedOtp } = generateOtp();
     const redisOtpKey = `forgot_otp:${email}`;
@@ -245,10 +224,7 @@ export class UserAuthService implements IUserAuthService {
       throw new AppError("Invalid or expired reset token", HttpStatus.BAD_REQUEST);
     }
 
-    const user = await this._userAuthRepo.findByEmail(email);
-    if (!user) {
-      throw new AppError(MESSAGES.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
+    const user = assertFound(await this._userAuthRepo.findByEmail(email), MESSAGES.USER_NOT_FOUND);
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this._userAuthRepo.updateUser(user._id.toString(), { password: hashedPassword });

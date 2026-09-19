@@ -1,7 +1,7 @@
 import { IBaseRepository } from "./IBaseRepository";
 import type { Model  } from "mongoose";
 import { QueryFilter } from "mongoose";
-export class BaseRepository<T> implements IBaseRepository<T> {
+export abstract class BaseRepository<T> implements IBaseRepository<T> {
   protected model: Model<T>;
 
   constructor(model: Model<T>) {

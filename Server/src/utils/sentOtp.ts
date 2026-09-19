@@ -79,15 +79,29 @@ export const sendOtpEmail = async (email: string, otp: string) => {
   try {
     console.log("📩 Sending OTP via Resend:", email);
 
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM!,
       to: email,
       subject: "Your OTP Code",
-      html: `<h2>Your OTP is: ${otp}</h2><p>It expires in 5 minutes</p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
+          <h2 style="margin-bottom: 8px;">BlogFlow verification code</h2>
+          <p>Use the code below to continue. It expires in 5 minutes.</p>
+          <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; margin: 24px 0;">${otp}</p>
+          <p style="color: #64748b; font-size: 13px;">If you didn't request this code, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+          <p style="color: #94a3b8; font-size: 12px;">BlogFlow &middot; This is an automated message, please don't reply.</p>
+        </div>
+      `,
+      text: `BlogFlow verification code: ${otp}\n\nThis code expires in 5 minutes. If you didn't request it, you can ignore this email.\n\n- BlogFlow`,
     });
 
-    console.log("✅ Email sent:", data);
+    if (error) {
+      console.log("❌ Resend rejected the send:", error);
+      return { success: false };
+    }
 
+    console.log("✅ Email sent:", data);
     return { success: true };
   } catch (error) {
     console.log("❌ Resend error:", error);
